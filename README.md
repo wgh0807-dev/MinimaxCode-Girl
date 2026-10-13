@@ -28,7 +28,7 @@
 ## 快速开始
 
 ```powershell
-git clone <this-repo>
+git clone https://github.com/wgh0807-dev/MinimaxCode-Girl.git
 cd MinimaxCode-Girl/deskpet
 npm install
 
