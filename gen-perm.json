@@ -1,0 +1,13 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "pet-flat-permission.png",
+      "input_urls": [
+        "<REFERENCE_IMAGE_URL>"
+      ],
+      "prompt": "Clean modern flat vector chibi mascot illustration of the anime girl from the reference image, front view, standing, full body, centered, same character and same outfit as the reference. Modern flat anime sticker style: smooth clean vector lineart, soft cel shading, NO pixel art, NOT 8-bit, no pixelation, no chunky pixels, perfectly smooth edges. Super-deformed two-head-tall proportions with an oversized round head. Long wavy orange-to-pink gradient hair, white beret hat with a small pink ribbon bow on the side, large round sparkling amber eyes. Polite expectant expression asking for permission: head tilted slightly to one side, one eyebrow slightly raised, soft friendly half-smile, looking straight ahead at the viewer. Her right hand is raised to chest height with the palm facing up in a gentle please gesture, while her other hand holds the small orange conch shell against her body. White jacket with pink trim, beige pleated skirt, white socks, pink sneakers. Vibrant soft pastel palette, clean uniform dark-brown outline of even thickness, crisp high-definition rendering. Isolated on a fully transparent background with no drop shadow, no ground, no text, no watermark, no floating symbols or punctuation marks, generous empty margin on all sides."
+    }
+  ]
+}

@@ -40,6 +40,30 @@ npm start
 
 再叠一层时间衰减：超过 20 秒没动静且已出最终答复 → idle；超过 150 秒 → sleeping（冒 z）。
 
+### 「等你批准」怎么判出来的
+
+本地没有"等待用户批准"的标志位，只能近似推断：
+
+1. 读运行时日志 `v2/observability/logs/runtime-*.log` 尾部 512KB，
+   找到本会话**最后一条**结构化权限判定（`[permission] <scope> layer=... mode=... verdict=...`）。
+2. 该判定必须是 `ask`，且发生时间**晚于** messages.jsonl 的最后写入时间（说明会话自那时起卡住没动），
+   且未超过 180 秒。
+
+只认带 `sessionId` 的 `whole-command` 行；日志里还会记录工具调用原文（含 `[permission]`、
+`verdict=` 这类字面量），所以用的是锚定完整形状的严格正则，不是关键词包含。
+
+`auto` 权限模式下 `ask` 会在同一毫秒被 `bypass-allow allow` 覆盖，取最后一条自然就不会误报。
+
+### 上下文用量面板
+
+`messages.jsonl` 每条消息带 `usage.totalTokens`，就是这一轮实际占用的上下文；
+上限不在 jsonl 里，从 `config.yaml` 的 `<model>.limit.context` 取（正则抓第一个 `context:`）。
+面板显示 占用/上限 + 进度条（≥60% 转黄、≥85% 转红）+ 模型名。
+
+**套餐类型 / 五小时限额 / 周限额没有做**——这三项本地完全不落盘（数据目录按文件名扫过、
+78 张 sqlite 表全查过、日志里也没有），只能靠读 `auth.json` 的登录凭据去请求服务端 API。
+为了保持「只读本地、零网络请求、不碰凭据」的安全边界，暂不实现。
+
 数据目录定位顺序：`DESKPET_DATA_DIR` → `MINIMAX_DATA_DIR` → `MAVIS_DATA_DIR`
 → 从本目录逐层向上探测带 `v2/sessions` 的那一层 → `~/.minimax`。
 自定义安装位置也能跑，不用改代码。
@@ -50,18 +74,19 @@ npm start
 橙粉渐变长发、琥珀色大眼睛、米色格纹裙、白袜粉鞋，手里攥着一颗橙色海螺。
 **非像素风**，是插画质感的透明 PNG。
 
-形象是 6 张独立立绘，放在 `assets/`：
+形象是 7 张独立立绘，放在 `assets/`：
 
 | 文件 | 状态 |
 | --- | --- |
 | `pet-flat-idle.png` | idle |
 | `pet-flat-thinking.png` | thinking |
 | `pet-flat-working.png` | working / typing |
+| `pet-flat-permission.png` | permission（等你批准） |
 | `pet-flat-happy.png` | happy |
 | `pet-flat-error.png` | error |
 | `pet-flat-sleeping.png` | sleeping |
 
-6 张统一 **364x584 画布、脚底对齐、水平居中**，所以切表情时角色不会跳动、
+7 张统一 **364x584 画布、脚底对齐、水平居中**，所以切表情时角色不会跳动、
 不会忽大忽小。
 
 ### 素材流水线

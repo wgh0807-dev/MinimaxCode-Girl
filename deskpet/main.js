@@ -15,7 +15,7 @@ const zlib = require('zlib');
 const { createWatcher, DATA_DIR } = require('./watcher');
 
 const WIN_W = 240;
-const WIN_H = 372;
+const WIN_H = 440;
 
 let win = null;
 let tray = null;

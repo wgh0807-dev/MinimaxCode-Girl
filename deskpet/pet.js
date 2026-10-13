@@ -15,17 +15,18 @@
  * ==================================================================== */
 
 const STATES = {
-  idle:     { sprite: 'idle',     anim: 'anim-breathe', fx: '' },
-  thinking: { sprite: 'thinking', anim: 'anim-tilt',    fx: 'show-dots' },
-  typing:   { sprite: 'working',  anim: 'anim-tap',     fx: '' },
-  working:  { sprite: 'working',  anim: 'anim-tap',     fx: '' },
-  happy:    { sprite: 'happy',    anim: 'anim-jump',    fx: 'show-spark' },
-  error:    { sprite: 'error',    anim: 'anim-shake',   fx: 'show-excl' },
-  sleeping: { sprite: 'sleeping', anim: 'anim-sleep',   fx: 'show-zzz' }
+  idle:       { sprite: 'idle',       anim: 'anim-breathe', fx: '' },
+  thinking:   { sprite: 'thinking',   anim: 'anim-tilt',    fx: 'show-dots' },
+  typing:     { sprite: 'working',    anim: 'anim-tap',     fx: '' },
+  working:    { sprite: 'working',    anim: 'anim-tap',     fx: '' },
+  permission: { sprite: 'permission', anim: 'anim-bump',    fx: 'show-ask' },
+  happy:      { sprite: 'happy',      anim: 'anim-jump',    fx: 'show-spark' },
+  error:      { sprite: 'error',      anim: 'anim-shake',   fx: 'show-excl' },
+  sleeping:   { sprite: 'sleeping',   anim: 'anim-sleep',   fx: 'show-zzz' }
 };
 
-const ALL_ANIMS = ['anim-breathe', 'anim-tilt', 'anim-tap', 'anim-jump', 'anim-shake', 'anim-sleep'];
-const ALL_FX = ['show-dots', 'show-zzz', 'show-spark', 'show-excl'];
+const ALL_ANIMS = ['anim-breathe', 'anim-tilt', 'anim-tap', 'anim-bump', 'anim-jump', 'anim-shake', 'anim-sleep'];
+const ALL_FX = ['show-dots', 'show-ask', 'show-zzz', 'show-spark', 'show-excl'];
 
 const bodyWrap = document.getElementById('bodywrap');
 const body = document.getElementById('body');
@@ -33,6 +34,42 @@ const shadow = document.getElementById('shadow');
 const fx = document.getElementById('fx');
 const bubbleEl = document.getElementById('bubble');
 const sprites = [...document.querySelectorAll('.sprite')];
+const panel = document.getElementById('panel');
+const panelBar = document.getElementById('panel-bar');
+const panelNum = document.getElementById('panel-num');
+const panelModel = document.getElementById('panel-model');
+
+/** 上下文用量面板：上下文占用 / 上限 + 模型名 */
+function fmtTokens(n) {
+  if (!Number.isFinite(n)) return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+  if (n >= 1000) return Math.round(n / 1000) + 'K';
+  return String(n);
+}
+
+let lastCtxKey = null;
+function renderContext(ctx) {
+  const key = ctx ? `${ctx.used}/${ctx.window}/${ctx.model}` : 'none';
+  if (key === lastCtxKey) return;
+  lastCtxKey = key;
+
+  if (!ctx) {
+    panel.classList.add('empty');
+    panelNum.textContent = '—';
+    panelModel.textContent = '';
+    panelBar.style.width = '0%';
+    return;
+  }
+
+  panel.classList.remove('empty');
+  const pct = ctx.pct == null ? 0 : Math.max(0, Math.min(1, ctx.pct));
+  panelBar.style.width = (pct * 100).toFixed(1) + '%';
+  panelBar.className = pct >= 0.85 ? 'bar hot' : pct >= 0.6 ? 'bar warm' : 'bar';
+  panelNum.textContent = ctx.window
+    ? `${fmtTokens(ctx.used)} / ${fmtTokens(ctx.window)}`
+    : fmtTokens(ctx.used);
+  panelModel.textContent = ctx.model ? ctx.model.replace(/^MiniMax-/, '') : '';
+}
 
 let state = 'idle';
 let rendered = null;   // 当前真正画出来的状态
@@ -86,9 +123,9 @@ function say(text, kind) {
  *  状态接入
  * ---------------------------------------------------------------- */
 
-const LABEL_KIND = { happy: 'happy', error: 'error' };
+const LABEL_KIND = { happy: 'happy', error: 'error', permission: 'ask' };
 
-function applyState(next, label) {
+function applyState(next, label, context) {
   const prev = state;
   state = STATES[next] ? next : 'idle';
 
@@ -106,6 +143,7 @@ function applyState(next, label) {
   }
 
   render(forcing || state);
+  renderContext(context || null);
 }
 
 function poke() {
@@ -122,7 +160,7 @@ function poke() {
 }
 
 if (window.pet && window.pet.onState) {
-  window.pet.onState(({ state: s, label }) => applyState(s, label));
+  window.pet.onState((p) => applyState(p.state, p.label, p.context));
   window.pet.onPoke(poke);
 }
 
@@ -188,3 +226,4 @@ window.addEventListener('mouseleave', () => {
 });
 
 render(state);
+renderContext(null);

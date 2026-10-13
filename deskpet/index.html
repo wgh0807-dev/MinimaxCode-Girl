@@ -39,7 +39,7 @@
       #bubble {
         position: absolute;
         left: 50%;
-        bottom: 256px;
+        bottom: 322px;
         transform: translateX(-50%) scale(0.9);
         max-width: 208px;
         padding: 6px 10px;
@@ -74,6 +74,10 @@
         border-bottom: 1px solid rgba(120, 130, 190, 0.5);
         transform: translateX(-50%) rotate(45deg);
       }
+      #bubble.ask {
+        background: rgba(58, 42, 8, 0.95);
+        border-color: rgba(245, 181, 68, 0.6);
+      }
       #bubble.happy {
         background: rgba(28, 58, 40, 0.95);
         border-color: rgba(90, 200, 130, 0.6);
@@ -83,13 +87,77 @@
         border-color: rgba(220, 90, 110, 0.6);
       }
 
+      /* ---------------- 上下文用量面板 ---------------- */
+      #panel {
+        position: absolute;
+        left: 50%;
+        bottom: 10px;
+        width: 216px;
+        padding: 7px 10px 8px;
+        border-radius: 12px;
+        transform: translateX(-50%);
+        background: rgba(24, 24, 34, 0.9);
+        border: 1px solid rgba(120, 130, 190, 0.4);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
+        color: #e8ecff;
+        pointer-events: none;
+        z-index: 1;
+      }
+      #panel .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 5px;
+      }
+      #panel .k {
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        color: rgba(232, 236, 255, 0.62);
+      }
+      #panel .v {
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+      #panel .track {
+        height: 5px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.13);
+        overflow: hidden;
+      }
+      #panel .bar {
+        height: 100%;
+        width: 0%;
+        border-radius: 3px;
+        background: #6f8cff;
+        transition: width 0.45s ease, background 0.3s ease;
+      }
+      #panel .bar.warm {
+        background: #f5b544;
+      }
+      #panel .bar.hot {
+        background: #ff5a6a;
+      }
+      #panel .model {
+        margin-top: 5px;
+        font-size: 9px;
+        letter-spacing: 0.3px;
+        color: rgba(232, 236, 255, 0.45);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #panel.empty {
+        opacity: 0.55;
+      }
+
       /* ---------------- 身体 ----------------
          #bodywrap 只负责水平居中；#body 才是动画目标，
          动画里随便写 transform 都不会跟居中打架。            */
       #bodywrap {
         position: absolute;
         left: 50%;
-        bottom: 20px;
+        bottom: 76px;
         width: var(--pet-w);
         height: var(--pet-h);
         transform: translateX(-50%);
@@ -127,7 +195,7 @@
       #shadow {
         position: absolute;
         left: 50%;
-        bottom: 12px;
+        bottom: 68px;
         transform: translateX(-50%);
         width: 84px;
         height: 11px;
@@ -200,6 +268,21 @@
           transform: translateY(1px) rotate(1deg) scaleY(0.985);
         }
       }
+      @keyframes a-bump {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0deg) scale(1);
+        }
+        25% {
+          transform: translateY(-5px) rotate(-2.5deg) scale(1.02);
+        }
+        55% {
+          transform: translateY(1px) rotate(2deg) scale(0.99);
+        }
+        78% {
+          transform: translateY(-2px) rotate(-1deg) scale(1.01);
+        }
+      }
       @keyframes a-jump {
         0%,
         100% {
@@ -251,6 +334,9 @@
       #body.anim-tap {
         animation: a-tap 0.62s ease-in-out infinite;
       }
+      #body.anim-bump {
+        animation: a-bump 1.5s ease-in-out infinite;
+      }
       #body.anim-jump {
         animation: a-jump 0.72s ease-in-out infinite;
       }
@@ -266,7 +352,7 @@
       #fx {
         position: absolute;
         left: 50%;
-        bottom: 214px;
+        bottom: 270px;
         width: 120px;
         height: 46px;
         margin-left: 6px;
@@ -405,6 +491,23 @@
           transform: scale(0.7) rotate(20deg);
         }
       }
+      /* 等你批准的问号 */
+      #fx .ask {
+        right: 10px;
+        bottom: 4px;
+        width: 26px;
+        height: 26px;
+        line-height: 26px;
+        text-align: center;
+        border-radius: 50%;
+        background: #f5b544;
+        color: #3a2a08;
+        font: 700 17px/26px "Segoe UI", sans-serif;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      #fx.show-ask .ask {
+        animation: f-excl 1.5s ease-out infinite;
+      }
       /* 报错的感叹号 */
       #fx .excl {
         right: 8px;
@@ -452,6 +555,7 @@
         <span class="spark s1">&#10022;</span>
         <span class="spark s2">&#10022;</span>
         <span class="spark s3">&#10022;</span>
+        <span class="ask">?</span>
         <span class="excl">!</span>
       </div>
       <div id="shadow"></div>
@@ -462,8 +566,19 @@
           <img class="sprite" data-sprite="working" src="assets/pet-flat-working.png" alt="" />
           <img class="sprite" data-sprite="happy" src="assets/pet-flat-happy.png" alt="" />
           <img class="sprite" data-sprite="error" src="assets/pet-flat-error.png" alt="" />
+          <img class="sprite" data-sprite="permission" src="assets/pet-flat-permission.png" alt="" />
           <img class="sprite" data-sprite="sleeping" src="assets/pet-flat-sleeping.png" alt="" />
         </div>
+      </div>
+
+      <!-- 上下文用量面板 -->
+      <div id="panel" class="empty">
+        <div class="row">
+          <span class="k">上下文</span>
+          <span id="panel-num" class="v">—</span>
+        </div>
+        <div class="track"><div id="panel-bar" class="bar"></div></div>
+        <div id="panel-model" class="model"></div>
       </div>
     </div>
     <script src="pet.js"></script>

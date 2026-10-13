@@ -61,6 +61,8 @@ const SESSIONS_ROOT = fs.existsSync(path.join(DATA_DIR, 'v2', 'sessions'))
 const SLEEP_AFTER_MS = 150000;
 // 超过这个时长且已经产出最终答复 -> 空闲
 const IDLE_AFTER_MS = 20000;
+// 权限判定停在 ask 超过这么久还没被应答 -> 不再显示「等你批准」
+const PERM_STALE_MS = 180000;
 
 function pad(n) {
   return n < 10 ? '0' + n : String(n);
@@ -163,9 +165,144 @@ function toolLabel(name) {
   return name.length > 12 ? name.slice(0, 12) + '…' : name;
 }
 
+/* ---------------------------------------------------------------- *
+ *  会话 id
+ *  会话目录名形如 10-09-36-100-session_bXZzX2ZlZmEw... ，
+ *  后半段是 mvs_xxx 的 base64。
+ * ---------------------------------------------------------------- */
+
+function sessionIdOf(file) {
+  const m = /session_([A-Za-z0-9_-]+)/.exec(path.basename(path.dirname(file || '')));
+  if (!m) return null;
+  try {
+    const id = Buffer.from(m[1], 'base64').toString('utf8');
+    return /^mvs_/.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+/* ---------------------------------------------------------------- *
+ *  权限判定（读运行时日志）
+ *
+ *  日志行示例：
+ *  [22:13:34.392] ... [permission] whole-command layer=aggregated
+ *    mode=default verdict=ask {... "sessionId":"mvs_f8fb..." }
+ *
+ *  只有带 sessionId 的 whole-command 行才代表一次完整判定；
+ *  同一条命令的 ask 常被随后的 bypass-allow 覆盖，所以取最后一条。
+ * ---------------------------------------------------------------- */
+
+const LOGS_DIR = path.join(DATA_DIR, 'v2', 'observability', 'logs');
+
+function newestLogFile() {
+  // 文件名是 runtime-YYYYMMDDHH.log（带小时），所以直接扫目录取最新的那个
+  let best = null;
+  let bestT = 0;
+  let names;
+  try {
+    names = fs.readdirSync(LOGS_DIR);
+  } catch {
+    return null;
+  }
+  for (const n of names) {
+    if (!n.startsWith('runtime-') || !n.endsWith('.log')) continue;
+    const f = path.join(LOGS_DIR, n);
+    let t = 0;
+    try {
+      t = fs.statSync(f).mtimeMs;
+    } catch {
+      continue;
+    }
+    if (t > bestT) {
+      bestT = t;
+      best = f;
+    }
+  }
+  return best;
+}
+
+// 只认结构化判定行。日志里还会记录工具调用原文（含 '[permission]'、'verdict='
+// 这类字面量），宽松匹配会被自己的命令文本污染，所以这里锚定完整形状。
+const PERM_LINE =
+  /^\[(\d{2}):(\d{2}):(\d{2})\.(\d{3})\].*?\[permission\]\s+([\w-]+)\s+layer=(\S+)\s+mode=(\w+)\s+verdict=(allow|ask|deny)/;
+
+const PERM_VERDICTS = new Set(['allow', 'ask', 'deny']);
+
+/** 返回该会话最近一次权限判定 {verdict, ts}，没有就 null */
+function lastPermissionVerdict(sessionId) {
+  if (!sessionId) return null;
+  const file = newestLogFile();
+  if (!file) return null;
+
+  let text;
+  try {
+    const fd = fs.openSync(file, 'r');
+    const size = fs.fstatSync(fd).size;
+    const len = Math.min(512 * 1024, size);
+    const buf = Buffer.alloc(len);
+    fs.readSync(fd, buf, 0, len, size - len);
+    fs.closeSync(fd);
+    text = buf.toString('utf8');
+  } catch {
+    return null;
+  }
+
+  let out = null;
+  for (const line of text.split('\n')) {
+    if (!line.includes(sessionId)) continue;
+    const m = PERM_LINE.exec(line);
+    if (!m) continue;
+    if (!PERM_VERDICTS.has(m[6])) continue;
+    const now = new Date();
+    out = {
+      verdict: m[6],
+      scope: m[5],
+      ts: new Date(now.getFullYear(), now.getMonth(), now.getDate(), +m[1], +m[2], +m[3], +m[4]).getTime()
+    };
+  }
+  return out;
+}
+
+/* ---------------------------------------------------------------- *
+ *  上下文用量
+ *
+ *  messages.jsonl 里每条消息带 usage：
+ *    {input, output, cacheRead, cacheWrite, totalTokens}
+ *  totalTokens 就是这一轮请求实际占用的上下文。
+ *  上限不在 jsonl 里，从 config.yaml 的 <model>.limit.context 取。
+ * ---------------------------------------------------------------- */
+
+function modelContextWindow(model) {
+  if (!model) return null;
+  try {
+    const yaml = fs.readFileSync(path.join(DATA_DIR, 'config.yaml'), 'utf8');
+    const at = yaml.indexOf(`\n      ${model}:`);
+    if (at < 0) return null;
+    const m = /\n\s+context:\s*(\d+)/.exec(yaml.slice(at, at + 1200));
+    return m ? Number(m[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function readContext(msg) {
+  const u = msg && msg.usage;
+  const used = u && Number.isFinite(u.totalTokens) ? u.totalTokens : null;
+  if (used === null) return null;
+  const model = msg.model || null;
+  const window = modelContextWindow(model);
+  return {
+    used,
+    window,
+    model,
+    pct: window ? Math.min(1, used / window) : null
+  };
+}
+
 /** 把最后一条消息 + 时间差映射成桌宠状态 */
 function deriveState(rec) {
-  if (!rec) return { state: 'idle', age: Infinity, label: null };
+  if (!rec) return { state: 'idle', age: Infinity, label: null, context: null };
 
   const age = Date.now() - rec.mtime;
   const last = readLastJson(rec.file);
@@ -217,7 +354,15 @@ function deriveState(rec) {
     label = null;
   }
 
-  return { state, age, label };
+  // 等待授权：只有「权限判定停在 ask」+「会话自那时起没有新消息」才认。
+  // 日志里 ask 经常在同一毫秒被 bypass-allow 覆盖，所以取最后一条判定。
+  const perm = lastPermissionVerdict(sessionIdOf(rec.file));
+  if (perm && perm.verdict === 'ask' && perm.ts > rec.mtime && Date.now() - perm.ts < PERM_STALE_MS) {
+    state = 'permission';
+    label = '等你批准';
+  }
+
+  return { state, age, label, context: readContext(msg) };
 }
 
 /** 轮询启动，返回 stop 函数 */
@@ -231,7 +376,7 @@ function createWatcher(onTick, intervalMs = 1200) {
     try {
       payload = deriveState(newestSessionFile());
     } catch (e) {
-      payload = { state: 'idle', age: Infinity, label: null };
+      payload = { state: 'idle', age: Infinity, label: null, context: null };
     }
     try {
       onTick(payload);
