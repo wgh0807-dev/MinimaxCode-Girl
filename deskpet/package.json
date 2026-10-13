@@ -1,11 +1,12 @@
 {
-  "name": "deskpet",
+  "name": "minimaxcode-girl",
   "version": "0.1.0",
-  "description": "A pixel desktop pet for MiniMax Code",
+  "description": "A desktop companion for MiniMax Code that reacts to session activity",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
+  "keywords": ["minimax-code", "desktop-pet", "electron"],
   "license": "MIT",
   "dependencies": {
     "electron": "^44.7.0"

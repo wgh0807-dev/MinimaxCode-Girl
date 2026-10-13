@@ -64,9 +64,19 @@ npm start
 78 张 sqlite 表全查过、日志里也没有），只能靠读 `auth.json` 的登录凭据去请求服务端 API。
 为了保持「只读本地、零网络请求、不碰凭据」的安全边界，暂不实现。
 
-数据目录定位顺序：`DESKPET_DATA_DIR` → `MINIMAX_DATA_DIR` → `MAVIS_DATA_DIR`
+数据目录定位顺序：`deskpet/data-dir.local.json`（本地文件，不进仓库）
+→ `DESKPET_DATA_DIR` → `MINIMAX_DATA_DIR` → `MAVIS_DATA_DIR`
 → 从本目录逐层向上探测带 `v2/sessions` 的那一层 → `~/.minimax`。
-自定义安装位置也能跑，不用改代码。
+
+仓库不在数据目录内部时（比如放到 `D:/workspace/...`），向上探测一定失败，
+此时**必须**新建 `data-dir.local.json`：
+
+```json
+{ "dataDir": "D:/Data/.minimax/.minimax" }
+```
+
+否则会静默回退到 `~/.minimax`，读到别的 profile 的数据且不报错。
+该文件注意必须 **UTF-8 无 BOM**，否则 `JSON.parse` 直接抛错。
 
 ## 形象
 
