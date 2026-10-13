@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "16:9",
+      "resolution": "2K",
+      "output_file": "char-sheet-3view.png",
+      "input_urls": [
+        "<REFERENCE_IMAGE_URL>"
+      ],
+      "prompt": "Professional anime character design turnaround sheet based on the reference image. Three full-body views of the SAME character arranged side by side on a clean white background: FRONT view on the left, SIDE profile view in the middle, BACK view on the right. Strictly consistent character design across all three views: young anime girl with long wavy hair in an orange-to-pink gradient, white beret hat with a small pink ribbon bow on the side, large amber eyes, white jacket with pink lining over a pink top, black choker necklace, beige plaid pleated skirt, white knee-high socks with pink stripes, white and pink sneakers, small crossbody shoulder bag. Neutral standing A-pose with arms slightly away from the body, no props, flat even studio lighting, clean lineart with soft cel shading, production-ready character model sheet layout, full body visible from head to toe in every view, evenly spaced, no text, no labels, no watermark."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "char-pixel.png",
+      "input_urls": [
+        "<REFERENCE_IMAGE_URL>"
+      ],
+      "prompt": "Chibi pixel art character of the anime girl from the reference image, front view, standing, full body. Super-deformed two-head-tall proportions: oversized round head, tiny body. Long wavy hair in an orange-to-pink gradient, white beret hat with a small pink ribbon bow, large sparkling amber eyes, cute open smile, white jacket with pink trim, beige plaid pleated skirt, white socks, pink sneakers, holding a small orange conch shell in one hand. Crisp clean pixel art, consistent pixel grid, bold dark outline, limited pastel palette with warm orange and pink accents, retro game sprite aesthetic, isolated on a pure white background, centered with generous margin, no text, no watermark, no drop shadow."
+    }
+  ]
+}

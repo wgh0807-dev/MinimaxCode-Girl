@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; img-src 'self' data:;"
+    />
+    <title>deskpet</title>
+    <style>
+      :root {
+        --pet-h: 208px; /* 角色显示高度 */
+        --pet-w: 130px; /* = 364/584 * 208 */
+        --ink: #2b1b2b;
+        --pink: #e8618c;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+      #stage {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* ---------------- 气泡 ---------------- */
+      #bubble {
+        position: absolute;
+        left: 50%;
+        bottom: 256px;
+        transform: translateX(-50%) scale(0.9);
+        max-width: 208px;
+        padding: 6px 10px;
+        border-radius: 10px;
+        background: rgba(24, 24, 34, 0.94);
+        border: 1px solid rgba(120, 130, 190, 0.5);
+        color: #e8ecff;
+        font-size: 12px;
+        line-height: 1.35;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+      #bubble.show {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+      }
+      #bubble::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: -5px;
+        width: 9px;
+        height: 9px;
+        background: rgba(24, 24, 34, 0.94);
+        border-right: 1px solid rgba(120, 130, 190, 0.5);
+        border-bottom: 1px solid rgba(120, 130, 190, 0.5);
+        transform: translateX(-50%) rotate(45deg);
+      }
+      #bubble.happy {
+        background: rgba(28, 58, 40, 0.95);
+        border-color: rgba(90, 200, 130, 0.6);
+      }
+      #bubble.error {
+        background: rgba(62, 26, 34, 0.95);
+        border-color: rgba(220, 90, 110, 0.6);
+      }
+
+      /* ---------------- 身体 ----------------
+         #bodywrap 只负责水平居中；#body 才是动画目标，
+         动画里随便写 transform 都不会跟居中打架。            */
+      #bodywrap {
+        position: absolute;
+        left: 50%;
+        bottom: 20px;
+        width: var(--pet-w);
+        height: var(--pet-h);
+        transform: translateX(-50%);
+        cursor: grab;
+        z-index: 2;
+      }
+      #bodywrap.dragging {
+        cursor: grabbing;
+      }
+      #body {
+        position: absolute;
+        inset: 0;
+        transform-origin: 50% 100%;
+        will-change: transform;
+      }
+      .sprite {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: bottom center;
+        opacity: 0;
+        /* 下采样要平滑，绝不能开 pixelated */
+        image-rendering: auto;
+        pointer-events: none;
+        transition: opacity 0.12s linear;
+      }
+      .sprite.on {
+        opacity: 1;
+      }
+
+      /* ---------------- 地面阴影 ---------------- */
+      #shadow {
+        position: absolute;
+        left: 50%;
+        bottom: 12px;
+        transform: translateX(-50%);
+        width: 84px;
+        height: 11px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.3);
+        filter: blur(3px);
+        animation: shadow-breathe 3.2s ease-in-out infinite;
+        z-index: 1;
+      }
+      #shadow.anim-jump {
+        animation: shadow-jump 0.72s ease-in-out infinite;
+      }
+      #shadow.anim-sleep {
+        animation: shadow-breathe 6s ease-in-out infinite;
+      }
+      @keyframes shadow-breathe {
+        0%,
+        100% {
+          transform: translateX(-50%) scale(1);
+          opacity: 0.85;
+        }
+        50% {
+          transform: translateX(-50%) scale(0.94);
+          opacity: 0.72;
+        }
+      }
+      @keyframes shadow-jump {
+        0%,
+        100% {
+          transform: translateX(-50%) scale(1);
+          opacity: 0.85;
+        }
+        45% {
+          transform: translateX(-50%) scale(0.72);
+          opacity: 0.5;
+        }
+      }
+
+      /* ---------------- 身体动作 ---------------- */
+      @keyframes a-breathe {
+        0%,
+        100% {
+          transform: translateY(0) scaleY(1) rotate(0deg);
+        }
+        32% {
+          transform: translateY(-4px) scaleY(1.035) rotate(-0.8deg);
+        }
+        68% {
+          transform: translateY(-1px) scaleY(0.985) rotate(0.8deg);
+        }
+      }
+      @keyframes a-tilt {
+        0%,
+        100% {
+          transform: rotate(-2deg) translateY(0);
+        }
+        50% {
+          transform: rotate(2deg) translateY(-3px);
+        }
+      }
+      @keyframes a-tap {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0deg) scaleY(1);
+        }
+        30% {
+          transform: translateY(-4px) rotate(-1.5deg) scaleY(1.02);
+        }
+        60% {
+          transform: translateY(1px) rotate(1deg) scaleY(0.985);
+        }
+      }
+      @keyframes a-jump {
+        0%,
+        100% {
+          transform: translateY(0) scaleY(1) rotate(0deg);
+        }
+        25% {
+          transform: translateY(2px) scaleY(0.96) rotate(0deg);
+        }
+        55% {
+          transform: translateY(-16px) scaleY(1.05) rotate(-3deg);
+        }
+        80% {
+          transform: translateY(1px) scaleY(0.97) rotate(2deg);
+        }
+      }
+      @keyframes a-shake {
+        0%,
+        100% {
+          transform: translateX(0) rotate(0deg);
+        }
+        15% {
+          transform: translateX(-5px) rotate(-2.5deg);
+        }
+        35% {
+          transform: translateX(5px) rotate(2.5deg);
+        }
+        55% {
+          transform: translateX(-4px) rotate(-2deg);
+        }
+        75% {
+          transform: translateX(4px) rotate(2deg);
+        }
+      }
+      @keyframes a-sleep {
+        0%,
+        100% {
+          transform: scaleY(1) translateY(0) rotate(4.5deg);
+        }
+        50% {
+          transform: scaleY(1.05) translateY(3px) rotate(2deg);
+        }
+      }
+      #body.anim-breathe {
+        animation: a-breathe 3.4s ease-in-out infinite;
+      }
+      #body.anim-tilt {
+        animation: a-tilt 2.4s ease-in-out infinite;
+      }
+      #body.anim-tap {
+        animation: a-tap 0.62s ease-in-out infinite;
+      }
+      #body.anim-jump {
+        animation: a-jump 0.72s ease-in-out infinite;
+      }
+      #body.anim-shake {
+        animation: a-shake 0.56s ease-in-out infinite;
+      }
+      #body.anim-sleep {
+        animation: a-sleep 5s ease-in-out infinite;
+      }
+
+      /* ---------------- 特效层 ----------------
+         独立于 #body，不跟身体一起 transform。 */
+      #fx {
+        position: absolute;
+        left: 50%;
+        bottom: 214px;
+        width: 120px;
+        height: 46px;
+        margin-left: 6px;
+        transform: translateX(-50%);
+        pointer-events: none;
+        z-index: 3;
+      }
+      #fx > * {
+        position: absolute;
+        opacity: 0;
+      }
+      /* 思考的点点 */
+      #fx .dot {
+        bottom: 0;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--ink);
+        box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9);
+      }
+      #fx .dot.d1 {
+        left: 26px;
+      }
+      #fx .dot.d2 {
+        left: 40px;
+      }
+      #fx .dot.d3 {
+        left: 54px;
+      }
+      #fx.show-dots .d1 {
+        animation: f-dot 1.5s ease-in-out infinite;
+      }
+      #fx.show-dots .d2 {
+        animation: f-dot 1.5s ease-in-out infinite 0.2s;
+      }
+      #fx.show-dots .d3 {
+        animation: f-dot 1.5s ease-in-out infinite 0.4s;
+      }
+      @keyframes f-dot {
+        0% {
+          opacity: 0;
+          transform: translateY(10px) scale(0.5);
+        }
+        35% {
+          opacity: 1;
+          transform: translateY(-2px) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-14px) scale(0.75);
+        }
+      }
+      /* 睡觉的 z */
+      #fx .zzz {
+        font: 700 15px/1 "Segoe UI", sans-serif;
+        color: #6f7fd8;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.95);
+      }
+      #fx .zzz.z1 {
+        left: 58px;
+        bottom: 2px;
+      }
+      #fx .zzz.z2 {
+        left: 68px;
+        bottom: 12px;
+        font-size: 12px;
+      }
+      #fx .zzz.z3 {
+        left: 76px;
+        bottom: 21px;
+        font-size: 10px;
+      }
+      #fx.show-zzz .z1 {
+        animation: f-zzz 3s ease-in-out infinite;
+      }
+      #fx.show-zzz .z2 {
+        animation: f-zzz 3s ease-in-out infinite 1s;
+      }
+      #fx.show-zzz .z3 {
+        animation: f-zzz 3s ease-in-out infinite 2s;
+      }
+      @keyframes f-zzz {
+        0% {
+          opacity: 0;
+          transform: translate(0, 0) scale(0.6);
+        }
+        25% {
+          opacity: 0.95;
+        }
+        100% {
+          opacity: 0;
+          transform: translate(9px, -17px) scale(1.05);
+        }
+      }
+      /* 开心的星 */
+      #fx .spark {
+        font-size: 13px;
+        line-height: 1;
+        color: #ffcf3f;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+      }
+      #fx .spark.s1 {
+        left: 8px;
+        bottom: 4px;
+      }
+      #fx .spark.s2 {
+        left: 84px;
+        bottom: 16px;
+        font-size: 10px;
+      }
+      #fx .spark.s3 {
+        left: 30px;
+        bottom: 22px;
+        font-size: 9px;
+      }
+      #fx.show-spark .s1 {
+        animation: f-spark 0.72s ease-out infinite;
+      }
+      #fx.show-spark .s2 {
+        animation: f-spark 0.72s ease-out infinite 0.24s;
+      }
+      #fx.show-spark .s3 {
+        animation: f-spark 0.72s ease-out infinite 0.48s;
+      }
+      @keyframes f-spark {
+        0% {
+          opacity: 0;
+          transform: scale(0.3) rotate(-25deg);
+        }
+        40% {
+          opacity: 1;
+          transform: scale(1.15) rotate(8deg);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.7) rotate(20deg);
+        }
+      }
+      /* 报错的感叹号 */
+      #fx .excl {
+        right: 8px;
+        bottom: 6px;
+        width: 26px;
+        height: 26px;
+        line-height: 26px;
+        text-align: center;
+        border-radius: 50%;
+        background: #ff4d5e;
+        color: #fff;
+        font: 700 19px/26px "Segoe UI", sans-serif;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      #fx.show-excl .excl {
+        animation: f-excl 0.56s ease-out infinite;
+      }
+      @keyframes f-excl {
+        0% {
+          opacity: 0;
+          transform: scale(0.2);
+        }
+        35% {
+          opacity: 1;
+          transform: scale(1.18);
+        }
+        70%,
+        100% {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="bubble"></div>
+      <div id="fx">
+        <span class="dot d1"></span>
+        <span class="dot d2"></span>
+        <span class="dot d3"></span>
+        <span class="zzz z1">z</span>
+        <span class="zzz z2">z</span>
+        <span class="zzz z3">Z</span>
+        <span class="spark s1">&#10022;</span>
+        <span class="spark s2">&#10022;</span>
+        <span class="spark s3">&#10022;</span>
+        <span class="excl">!</span>
+      </div>
+      <div id="shadow"></div>
+      <div id="bodywrap">
+        <div id="body" class="anim-breathe">
+          <img class="sprite on" data-sprite="idle" src="assets/pet-flat-idle.png" alt="" />
+          <img class="sprite" data-sprite="thinking" src="assets/pet-flat-thinking.png" alt="" />
+          <img class="sprite" data-sprite="working" src="assets/pet-flat-working.png" alt="" />
+          <img class="sprite" data-sprite="happy" src="assets/pet-flat-happy.png" alt="" />
+          <img class="sprite" data-sprite="error" src="assets/pet-flat-error.png" alt="" />
+          <img class="sprite" data-sprite="sleeping" src="assets/pet-flat-sleeping.png" alt="" />
+        </div>
+      </div>
+    </div>
+    <script src="pet.js"></script>
+  </body>
+</html>

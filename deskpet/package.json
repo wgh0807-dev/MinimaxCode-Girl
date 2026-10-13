@@ -1,0 +1,13 @@
+{
+  "name": "deskpet",
+  "version": "0.1.0",
+  "description": "A pixel desktop pet for MiniMax Code",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^44.7.0"
+  }
+}

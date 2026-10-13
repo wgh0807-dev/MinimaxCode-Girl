@@ -1,0 +1,39 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "pet-flat-happy.jpg",
+      "input_urls": ["<REFERENCE_IMAGE_URL>"],
+      "prompt": "Clean modern flat vector chibi mascot illustration of the anime girl from the reference image, front view, standing, full body, centered. Modern flat anime sticker style: smooth clean vector lineart, soft cel shading, NO pixel art, NOT 8-bit, no pixelation, perfectly smooth edges. Super-deformed two-head-tall proportions with an oversized round head. EXACT SAME pose and framing as the reference: long wavy orange-to-pink gradient hair, white beret hat with a small pink ribbon bow on the side, white jacket with pink trim, beige pleated skirt, white socks, pink sneakers, holding a small orange conch shell in one hand at chest height. FACIAL EXPRESSION: beaming joyful smile with open mouth, both eyes squeezed into happy upward-curving arcs, rosy blushing cheeks, radiating excitement. Vibrant soft pastel palette, clean uniform dark-brown outline, crisp high-definition rendering. Isolated on a fully transparent background with no drop shadow, no floating props, no text, no watermark, generous empty margin."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "pet-flat-thinking.jpg",
+      "input_urls": ["<REFERENCE_IMAGE_URL>"],
+      "prompt": "Clean modern flat vector chibi mascot illustration of the anime girl from the reference image, front view, standing, full body, centered. Modern flat anime sticker style: smooth clean vector lineart, soft cel shading, NO pixel art, NOT 8-bit, no pixelation, perfectly smooth edges. Super-deformed two-head-tall proportions with an oversized round head. EXACT SAME pose and framing as the reference: long wavy orange-to-pink gradient hair, white beret hat with a small pink ribbon bow on the side, white jacket with pink trim, beige pleated skirt, white socks, pink sneakers, holding a small orange conch shell in one hand at chest height. FACIAL EXPRESSION: calm thoughtful and pensive, one eyebrow slightly raised, eyes half-lidded gazing upward to the side, small neutral closed mouth. Vibrant soft pastel palette, clean uniform dark-brown outline, crisp high-definition rendering. Isolated on a fully transparent background with no drop shadow, no floating props, no text, no watermark, generous empty margin."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "pet-flat-working.jpg",
+      "input_urls": ["<REFERENCE_IMAGE_URL>"],
+      "prompt": "Clean modern flat vector chibi mascot illustration of the anime girl from the reference image, front view, standing, full body, centered. Modern flat anime sticker style: smooth clean vector lineart, soft cel shading, NO pixel art, NOT 8-bit, no pixelation, perfectly smooth edges. Super-deformed two-head-tall proportions with an oversized round head. EXACT SAME pose and framing as the reference: long wavy orange-to-pink gradient hair, white beret hat with a small pink ribbon bow on the side, white jacket with pink trim, beige pleated skirt, white socks, pink sneakers, holding a small orange conch shell in one hand at chest height. FACIAL EXPRESSION: focused and determined, eyes narrowed with sharp bright highlights, eyebrows angled downward in concentration, small firm closed mouth. Vibrant soft pastel palette, clean uniform dark-brown outline, crisp high-definition rendering. Isolated on a fully transparent background with no drop shadow, no floating props, no text, no watermark, generous empty margin."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "pet-flat-sleeping.jpg",
+      "input_urls": ["<REFERENCE_IMAGE_URL>"],
+      "prompt": "Clean modern flat vector chibi mascot illustration of the anime girl from the reference image, front view, standing, full body, centered. Modern flat anime sticker style: smooth clean vector lineart, soft cel shading, NO pixel art, NOT 8-bit, no pixelation, perfectly smooth edges. Super-deformed two-head-tall proportions with an oversized round head. EXACT SAME pose and framing as the reference: long wavy orange-to-pink gradient hair, white beret hat with a small pink ribbon bow on the side, white jacket with pink trim, beige pleated skirt, white socks, pink sneakers, holding a small orange conch shell in one hand at chest height. FACIAL EXPRESSION: peacefully asleep, both eyes closed as gentle downward-curved lines, tiny relaxed mouth, calm serene face. Vibrant soft pastel palette, clean uniform dark-brown outline, crisp high-definition rendering. Isolated on a fully transparent background with no drop shadow, no floating props, no text, no watermark, generous empty margin."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "pet-flat-error.jpg",
+      "input_urls": ["<REFERENCE_IMAGE_URL>"],
+      "prompt": "Clean modern flat vector chibi mascot illustration of the anime girl from the reference image, front view, standing, full body, centered. Modern flat anime sticker style: smooth clean vector lineart, soft cel shading, NO pixel art, NOT 8-bit, no pixelation, perfectly smooth edges. Super-deformed two-head-tall proportions with an oversized round head. EXACT SAME pose and framing as the reference: long wavy orange-to-pink gradient hair, white beret hat with a small pink ribbon bow on the side, white jacket with pink trim, beige pleated skirt, white socks, pink sneakers, holding a small orange conch shell in one hand at chest height. FACIAL EXPRESSION: flustered and panicked, eyes wide open with tiny pupils, eyebrows raised in alarm, mouth a small wavy grimace, a single cartoon sweat drop drawn on her cheek. Vibrant soft pastel palette, clean uniform dark-brown outline, crisp high-definition rendering. Isolated on a fully transparent background with no drop shadow, no floating props, no text, no watermark, generous empty margin."
+    }
+  ]
+}
