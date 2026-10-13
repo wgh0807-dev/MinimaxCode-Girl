@@ -17,10 +17,28 @@ const os = require('os');
 
 /**
  * 定位运行时数据目录。
- * 自定义安装目录（比如装在 D:\Data 下）时环境变量未必存在，
- * 所以除了 env，还从 __dirname 往上逐层探测，直到找到带 v2/sessions 的那层。
+ *
+ * 优先级：
+ *  1. data-dir.local.json（本地文件，不进 git；仓库搬到机器上任意位置时靠它兜底）
+ *  2. DESKPET_DATA_DIR / MINIMAX_DATA_DIR / MAVIS_DATA_DIR 环境变量
+ *  3. 从 __dirname 往上逐层探测带 v2/sessions 的那一层
+ *  4. ~/.minimax
+ *
+ * 第 3 步依赖仓库恰好在数据目录内部或附近，所以搬到别处后必须用第 1 步，
+ * 否则会静默回退到 ~/.minimax 读到别的 profile 的数据。
  */
 function resolveDataDir() {
+  try {
+    const cfg = JSON.parse(
+      fs.readFileSync(path.join(__dirname, 'data-dir.local.json'), 'utf8')
+    );
+    if (cfg && typeof cfg.dataDir === 'string' && fs.existsSync(cfg.dataDir)) {
+      return cfg.dataDir;
+    }
+  } catch {
+    /* 没有这个文件就走下面的探测 */
+  }
+
   const fromEnv = [
     process.env.DESKPET_DATA_DIR,
     process.env.MINIMAX_DATA_DIR,
